@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>双拼练习 · 多种模式</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>⌨️ 双拼练习</h1>
+      <p class="tagline">一声一韵，两键一字 · 支持小鹤 / 微软 / 自然码 / 搜狗</p>
+    </div>
+    <div class="scheme-box">
+      <span class="scheme-label">方案</span>
+      <div id="schemeSelect" class="scheme-select"></div>
+    </div>
+  </header>
+
+  <nav class="nav" id="nav">
+    <button class="nav-btn" data-mode="layout">键位学习</button>
+    <button class="nav-btn" data-mode="syllable">音节练习</button>
+    <button class="nav-btn" data-mode="character">单字练习</button>
+    <button class="nav-btn" data-mode="word">词语练习</button>
+    <button class="nav-btn" data-mode="passage">文章跟打</button>
+    <button class="nav-btn" data-mode="reverse">键位反查</button>
+    <button class="nav-btn" data-mode="converter">转换器</button>
+  </nav>
+
+  <main class="main">
+    <!-- 键位学习 -->
+    <section id="panel-layout" class="panel">
+      <div class="panel-head">
+        <h2 id="layoutName">小鹤双拼</h2>
+        <p class="note" id="layoutNote"></p>
+      </div>
+      <div class="layout-grid">
+        <div class="layout-card">
+          <h3>韵母键位表</h3>
+          <table class="final-table">
+            <thead><tr><th>韵母</th><th></th><th>键位</th></tr></thead>
+            <tbody id="finalTable"></tbody>
+          </table>
+        </div>
+        <div class="layout-card">
+          <h3>声母特例</h3>
+          <div id="initialExamples" class="chip-wrap"></div>
+          <h3>零声母规则</h3>
+          <p class="hint-text">零声母（无开头的 a/o/e 韵母）按下表编码；以 y/w 开头的用 y/w 作首键。</p>
+          <div id="zeroExamples" class="chip-wrap"></div>
+          <h3>小贴士</h3>
+          <ul class="tips">
+            <li>每个音节固定两键：<b>声母键 + 韵母键</b>。</li>
+            <li>zh / ch / sh 分别用 <b>v / i / u</b> 三键。</li>
+            <li><b>v 键可用 u 代替</b>：如「局」可打 <b>jv</b> 或 <b>ju</b>（zh/ui/ü 的 v 都可输 u，见右下角开关）。</li>
+            <li>先在「音节练习」熟悉规则，再到「单字 / 词语」实战。</li>
+            <li>键盘上直接标出了每个键对应的韵母，可随时对照。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 音节练习 -->
+    <section id="panel-syllable" class="panel">
+      <div class="panel-head">
+        <h2>音节练习</h2>
+        <p class="note">看拼音音节，敲出它的双拼编码（两键）。</p>
+      </div>
+      <div class="drill">
+        <div class="prompt" id="syPrompt"></div>
+        <div class="slots" id="sySlots"></div>
+        <div class="feedback" id="syFeedback"></div>
+      </div>
+    </section>
+
+    <!-- 单字练习 -->
+    <section id="panel-character" class="panel">
+      <div class="panel-head">
+        <h2>单字练习</h2>
+        <p class="note">看汉字，敲出它的双拼编码。可在右上角开关拼音提示。</p>
+      </div>
+      <div class="drill">
+        <div class="prompt" id="chPrompt"></div>
+        <div class="hint" id="chHint"></div>
+        <div class="slots" id="chSlots"></div>
+        <div class="feedback" id="chFeedback"></div>
+      </div>
+    </section>
+
+    <!-- 词语练习 -->
+    <section id="panel-word" class="panel">
+      <div class="panel-head">
+        <h2>词语练习</h2>
+        <p class="note">看词语，连续敲出每个字的双拼编码。</p>
+      </div>
+      <div class="drill">
+        <div class="prompt" id="wdPrompt"></div>
+        <div class="hint" id="wdHint"></div>
+        <div class="slots" id="wdSlots"></div>
+        <div class="feedback" id="wdFeedback"></div>
+      </div>
+    </section>
+
+    <!-- 文章跟打 -->
+    <section id="panel-passage" class="panel">
+      <div class="panel-head">
+        <h2>文章跟打</h2>
+        <p class="note">逐字输入双拼编码，跟打整句。绿色对、红色错，结束后统计速度。</p>
+      </div>
+      <div class="drill">
+        <div class="passage-text" id="psText"></div>
+        <div class="hint" id="psHint"></div>
+        <div class="slots" id="psSlots"></div>
+        <div class="feedback" id="psFeedback"></div>
+        <div id="psResult" class="ps-result"></div>
+        <button class="start-btn" id="psStart">开始 / 换一段</button>
+      </div>
+    </section>
+
+    <!-- 键位反查 -->
+    <section id="panel-reverse" class="panel">
+      <div class="panel-head">
+        <h2>键位反查</h2>
+        <p class="note">反向记忆：看韵母敲键位，或看键位选韵母。</p>
+        <div class="seg">
+          <button id="rvF2k" class="seg-btn active">韵母 → 键位</button>
+          <button id="rvK2f" class="seg-btn">键位 → 韵母</button>
+        </div>
+      </div>
+      <div class="drill">
+        <div class="prompt" id="rvPrompt"></div>
+        <div class="hint" id="rvHint"></div>
+        <div class="slots" id="rvSlots"></div>
+        <div id="rvChoices" class="choices"></div>
+        <div class="feedback" id="rvFeedback"></div>
+      </div>
+    </section>
+
+    <!-- 转换器 -->
+    <section id="panel-converter" class="panel">
+      <div class="panel-head">
+        <h2>拼音 → 双拼转换器</h2>
+        <p class="note">输入拼音音节（空格分隔），实时转换为当前方案的双拼编码。</p>
+      </div>
+      <div class="converter">
+        <input id="cvInput" class="cv-input" type="text" placeholder="例如：zhong guo shuang pin" autocomplete="off" spellcheck="false" />
+        <div id="cvOutput" class="cv-output"></div>
+      </div>
+    </section>
+
+    <!-- 键盘 -->
+    <div id="keyboardWrap" class="keyboard-wrap">
+      <div id="keyboard" class="keyboard"></div>
+      <p class="kb-legend"><span class="dot dot-final"></span>韵母 &nbsp; <span class="dot dot-initial"></span>声母特例（zh/ch/sh）</p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="stats">
+      <span id="statSession">0 题 / 0 对</span>
+      <span id="statStreak">连击 0</span>
+      <span id="statAll">累计 0 题</span>
+    </div>
+    <div class="tools">
+      <label class="hint-toggle"><input type="checkbox" id="hintToggle" /> 显示拼音提示</label>
+      <label class="hint-toggle"><input type="checkbox" id="vuToggle" checked /> v/u 互通</label>
+      <a class="donate-link" href="donate.html">❤️ 打赏</a>
+      <button id="resetStats" class="ghost-btn">清零统计</button>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
