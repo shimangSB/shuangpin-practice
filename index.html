@@ -12,9 +12,12 @@
       <h1>⌨️ 双拼练习</h1>
       <p class="tagline">一声一韵，两键一字 · 支持小鹤 / 微软 / 自然码 / 搜狗</p>
     </div>
-    <div class="scheme-box">
-      <span class="scheme-label">方案</span>
-      <div id="schemeSelect" class="scheme-select"></div>
+    <div class="topbar-right">
+      <div class="scheme-box">
+        <span class="scheme-label">方案</span>
+        <div id="schemeSelect" class="scheme-select"></div>
+      </div>
+      <button id="treasureBtn" class="treasure-btn" title="百宝箱">🧰 百宝箱</button>
     </div>
   </header>
 
@@ -169,6 +172,28 @@
       <button id="resetStats" class="ghost-btn">清零统计</button>
     </div>
   </footer>
+
+  <!-- 百宝箱 -->
+  <div class="treasure-overlay" id="treasureOverlay">
+    <div class="treasure-modal" role="dialog" aria-modal="true" aria-label="百宝箱">
+      <div class="treasure-head">
+        <h2>🧰 百宝箱</h2>
+        <p>点一个宝贝，看看会发生什么奇怪的事 👀</p>
+        <button class="treasure-close" id="treasureClose" aria-label="关闭">×</button>
+      </div>
+      <div class="treasure-grid" id="treasureGrid">
+        <button class="treasure-item" data-t="random"><span class="t-ico">🎲</span><span>抽一个</span></button>
+        <button class="treasure-item" data-t="trivia"><span class="t-ico">💡</span><span>双拼冷知识</span></button>
+        <button class="treasure-item" data-t="dujitang"><span class="t-ico">🐔</span><span>毒鸡汤</span></button>
+        <button class="treasure-item" data-t="fortune"><span class="t-ico">🔮</span><span>今日运势</span></button>
+        <button class="treasure-item" data-t="mars"><span class="t-ico">👽</span><span>火星文翻译</span></button>
+        <button class="treasure-item" data-t="sound"><span class="t-ico">⌨️</span><span>打字音效</span></button>
+        <button class="treasure-item" data-t="confetti"><span class="t-ico">🎊</span><span>答对彩蛋</span></button>
+        <button class="treasure-item" data-t="catpaw"><span class="t-ico">🐾</span><span>猫爪光标</span></button>
+      </div>
+      <div class="treasure-output" id="treasureOutput"></div>
+    </div>
+  </div>
 
   <script src="data.js"></script>
   <script src="app.js"></script>

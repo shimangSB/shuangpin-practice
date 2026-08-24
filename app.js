@@ -289,6 +289,7 @@
         recordResult(ok);
         if (ok) {
           flashKeys(this.answer, 'kb-correct', 500);
+          if (treasure.confetti) spawnConfetti();
           setFeedback(this.fbEl, '✓ 正确 ' + displayCode(this.answer), 'ok');
         } else {
           flashKeys(this.answer, 'kb-wrong', 1200);
@@ -466,7 +467,7 @@
       if (this.buffer.length >= code.length) {
         var ok = codeMatches(this.buffer, code);
         this.typedChars++;
-        if (ok) { this.correctCount++; flashKeys(code, 'kb-correct', 300); }
+        if (ok) { this.correctCount++; flashKeys(code, 'kb-correct', 300); if (treasure.confetti) spawnConfetti(); }
         else { this.wrongCount++; flashKeys(code, 'kb-wrong', 500); }
         var doneSpan = $('psText').querySelector('.ps-char.current');
         if (doneSpan) { doneSpan.classList.remove('current'); doneSpan.classList.add(ok ? 'ok' : 'bad'); }
@@ -613,6 +614,7 @@
   document.addEventListener('keydown', function (e) {
     var t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+    if ($('treasureOverlay').classList.contains('open')) return;
     var k = e.key;
     if (k === 'Backspace') { e.preventDefault(); routeKey('BACKSPACE'); return; }
     var lower = k.toLowerCase();
@@ -620,14 +622,20 @@
       e.preventDefault();
       // 闪烁按下的键
       flashKeys(lower, 'kb-hit', 160);
+      if (treasure.sound) playKeySound();
       routeKey(lower);
       return;
     }
     if (k === ';' || k === ':') {
       e.preventDefault();
       flashKeys(';', 'kb-hit', 160);
+      if (treasure.sound) playKeySound();
       routeKey(';');
     }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeTreasure();
   });
 
   function routeKey(k) {
@@ -660,6 +668,181 @@
     }
     var btns = box.querySelectorAll('.scheme-btn');
     for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('active', btns[j].getAttribute('data-scheme') === state.schemeId);
+  }
+
+  /* ---------- 百宝箱 ---------- */
+  var treasure = { sound: false, confetti: false, catpaw: false };
+
+  var TREASURE_DATA = {
+    trivia: [
+      '双拼每个字固定按两下键，比全拼大约少敲 1/3 的键。',
+      'zh / ch / sh 在几乎所有双拼方案里都分别用 v / i / u 代替。',
+      '小鹤双拼里「ü」在 v 键上，所以「绿 lǜ」要打 lv。',
+      '全拼打「庄重 zhuangzhong」要 11 键，小鹤双拼只要 4 键：vlvs。',
+      '「双拼」也叫「双打」「双拼音码」，是拼音输入法的进阶玩法。',
+      '零声母音节（a、an、ang）在小鹤里要加首字母：aa、aj、ah。',
+      '「微软双拼」把 ing 放在分号键上，是最特别的一个键位。',
+      '「自然码」和「搜狗双拼」键位基本一致，都源自自然码方案。',
+      '拼音里没有的「ü」，键盘上习惯用 v 键顶替，这是国际惯例。',
+      '小鹤的「鹤」读 hè，方案名取自创始人网名。',
+      '熟练之后，双拼速度通常能稳定超过全拼约 30%。',
+      '「er」在小鹤里是特例，直接打 er，不拆成两键韵母。'
+    ],
+    dujitang: [
+      '世上无难事，只要肯放弃。',
+      '努力不一定成功，但不努力一定很轻松。',
+      '条条大路通罗马，可有的人就生在罗马。',
+      '万事开头难，然后中间难，最后结尾难。',
+      '你以为有钱人就快乐吗？有钱人的快乐你根本想象不到。',
+      '上帝给你关上一扇门，还会顺手夹一下你的脑子。',
+      '今天解决不了的事，明天也解决不了。',
+      '不逼自己一把，你都不知道自己能把事情搞砸。',
+      '生活不止眼前的苟且，还有明天的苟且和后天的苟且。',
+      '别灰心，人生就是这样：起起落落落落落落。',
+      '只要坚持，就一定会有……坚持不下去的那天。',
+      '咸鱼翻身，还是咸鱼。'
+    ],
+    fortune: [
+      { level: '大吉', text: '今天适合练习双拼，手速翻倍，连击不断。' },
+      { level: '中吉', text: '复习一遍韵母键位表，会有意外收获。' },
+      { level: '小吉', text: '宜：练 10 分钟；忌：连续熬夜。' },
+      { level: '末吉', text: '慢慢来，比较快。' },
+      { level: '平', text: '今天手感平平，多喝热水。' },
+      { level: '大吉', text: '盲打将有一次「顿悟」时刻。' },
+      { level: '中吉', text: '适合挑战「文章跟打」，速度创新高。' },
+      { level: '凶', text: '今日不宜背键位，建议先摸鱼 5 分钟。' }
+    ]
+  };
+
+  var MARS_MAP = {
+    '你':'伱','我':'莪','好':'恏','是':'湜','的':'啲','爱':'嗳','不':'卟','在':'洅','有':'囿',
+    '和':'咊','人':'亾','这':'适','中':'狆','大':'汏','小':'尛','上':'仩','下':'芐',
+    '天':'兲','地':'哋','心':'杺','开':'閞','快':'赽','今':'妗','明':'朙','早':'皁',
+    '晚':'晩','说':'説','话':'話','学':'學','习':'習','打':'咑','字':'牸','输':'輸',
+    '练':'練','双':'雙','拼':'拚','法':'琺','键':'鍵','盘':'盤','吃':'喫','睡':'睏',
+    '喝':'呵','笑':'笶','想':'缃','喜':'囍','欢':'歡','谢':'謝','朋':'倗','友':'叐',
+    '老':'咾','师':'師','生':'笙','世':'丗','界':'堺','女':'钕','男':'侽','风':'颩'
+  };
+
+  var audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+  function playKeySound() {
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    var t = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 1700 + Math.random() * 500;
+    gain.gain.setValueAtTime(0.10, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.05);
+    var osc2 = ctx.createOscillator();
+    var gain2 = ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.value = 110 + Math.random() * 70;
+    gain2.gain.setValueAtTime(0.16, t);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.start(t); osc2.stop(t + 0.08);
+  }
+
+  function spawnConfetti() {
+    var colors = ['#4f6ef7','#7c5cf0','#f59e0b','#10b981','#ef4444','#ec4899','#06b6d4'];
+    var n = 22;
+    for (var i = 0; i < n; i++) {
+      var c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = (Math.random() * 100) + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (1.2 + Math.random() * 1.2) + 's';
+      c.style.width = (6 + Math.random() * 8) + 'px';
+      c.style.height = (8 + Math.random() * 10) + 'px';
+      document.body.appendChild(c);
+      (function (el) { setTimeout(function () { el.remove(); }, 2600); })(c);
+    }
+  }
+
+  var catpawStyle = null;
+  function applyCatpaw() {
+    if (treasure.catpaw) {
+      if (!catpawStyle) {
+        var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><text y='26' font-size='26'>🐾</text></svg>";
+        var uri = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        catpawStyle = document.createElement('style');
+        catpawStyle.id = 'catpaw-cursor';
+        catpawStyle.textContent = 'body, body *{cursor:url("' + uri + '") 16 16, auto !important;}';
+        document.head.appendChild(catpawStyle);
+      }
+    } else if (catpawStyle) {
+      catpawStyle.remove();
+      catpawStyle = null;
+    }
+  }
+
+  function openTreasure() { $('treasureOverlay').classList.add('open'); }
+  function closeTreasure() { $('treasureOverlay').classList.remove('open'); }
+  function refreshTreasureToggles() {
+    var map = { sound: treasure.sound, confetti: treasure.confetti, catpaw: treasure.catpaw };
+    var items = document.querySelectorAll('.treasure-item');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle('active', !!map[items[i].getAttribute('data-t')]);
+    }
+  }
+  function showTreasure(html) { $('treasureOutput').innerHTML = html; }
+
+  function showMarsTranslator() {
+    showTreasure(
+      '<div class="mars-box">' +
+      '<input id="marsInput" type="text" placeholder="输入一段中文，比如：你好世界" />' +
+      '<button id="marsGo" class="start-btn">翻译成火星文</button>' +
+      '<div id="marsResult" class="mars-result"></div>' +
+      '</div>'
+    );
+    $('marsGo').addEventListener('click', function () {
+      var s = $('marsInput').value;
+      var out = '';
+      for (var i = 0; i < s.length; i++) { var ch = s.charAt(i); out += MARS_MAP[ch] || ch; }
+      $('marsResult').textContent = '👽 ' + (out || '（先输入点字吧）');
+    });
+  }
+
+  function handleTreasure(type) {
+    if (type === 'random') {
+      type = pickRandom(['trivia', 'dujitang', 'fortune']);
+    }
+    if (type === 'trivia') {
+      showTreasure('<div class="t-card t-trivia"><div class="t-tag">💡 双拼冷知识</div>' + pickRandom(TREASURE_DATA.trivia) + '</div>');
+    } else if (type === 'dujitang') {
+      showTreasure('<div class="t-card t-dujitang"><div class="t-tag">🐔 毒鸡汤</div>' + pickRandom(TREASURE_DATA.dujitang) + '</div>');
+    } else if (type === 'fortune') {
+      var f = pickRandom(TREASURE_DATA.fortune);
+      showTreasure('<div class="t-card t-fortune"><div class="t-tag">🔮 今日运势</div><div class="f-level">' + f.level + '</div><div class="f-text">' + f.text + '</div></div>');
+    } else if (type === 'sound') {
+      treasure.sound = !treasure.sound;
+      refreshTreasureToggles();
+      showTreasure('<div class="t-card">⌨️ 打字音效已' + (treasure.sound ? '开启 🟢' : '关闭 ⚪') + '，现在敲几下键盘试试。</div>');
+    } else if (type === 'confetti') {
+      treasure.confetti = !treasure.confetti;
+      refreshTreasureToggles();
+      if (treasure.confetti) spawnConfetti();
+      showTreasure('<div class="t-card">🎊 答对彩蛋已' + (treasure.confetti ? '开启 🟢' : '关闭 ⚪') + '，答对题目会撒彩带。</div>');
+    } else if (type === 'catpaw') {
+      treasure.catpaw = !treasure.catpaw;
+      applyCatpaw();
+      refreshTreasureToggles();
+      showTreasure('<div class="t-card">🐾 猫爪光标已' + (treasure.catpaw ? '开启 🟢' : '关闭 ⚪') + '，移动鼠标看看。</div>');
+    } else if (type === 'mars') {
+      showMarsTranslator();
+    }
   }
 
   /* ---------- 初始化 ---------- */
@@ -714,6 +897,20 @@
 
     // 转换器输入
     $('cvInput').addEventListener('input', renderConverter);
+
+    // 百宝箱
+    $('treasureBtn').addEventListener('click', openTreasure);
+    $('treasureClose').addEventListener('click', closeTreasure);
+    $('treasureOverlay').addEventListener('click', function (e) {
+      if (e.target === this) closeTreasure();
+    });
+    var tItems = document.querySelectorAll('.treasure-item');
+    for (var ti = 0; ti < tItems.length; ti++) {
+      tItems[ti].addEventListener('click', function () {
+        handleTreasure(this.getAttribute('data-t'));
+      });
+    }
+    refreshTreasureToggles();
 
     switchMode('layout');
   }

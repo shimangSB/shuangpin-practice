@@ -58,6 +58,20 @@ body {
 }
 .scheme-btn:hover { background: rgba(255,255,255,.24); }
 .scheme-btn.active { background: #fff; color: #4f6ef7; border-color: #fff; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.treasure-btn {
+  border: 1px solid rgba(255, 224, 150, .6);
+  background: linear-gradient(135deg, #ffb84d, #f59e0b);
+  color: #7a3c00;
+  padding: 7px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, .35);
+  transition: .15s;
+}
+.treasure-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(245, 158, 11, .45); }
 
 /* ---------- 导航 ---------- */
 .nav {
@@ -308,6 +322,96 @@ body {
 }
 .donate-link:hover { background: #ffedd5; border-color: #fdba74; }
 
+/* ---------- 百宝箱 ---------- */
+.treasure-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15, 20, 32, .55);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.treasure-overlay.open { display: flex; animation: fade .2s ease; }
+.treasure-modal {
+  width: 100%; max-width: 620px;
+  max-height: 86vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.3);
+  padding: 26px 26px 28px;
+  position: relative;
+}
+.treasure-head { text-align: center; margin-bottom: 20px; }
+.treasure-head h2 { margin: 0 0 4px; font-size: 24px; }
+.treasure-head p { margin: 0; color: var(--muted); font-size: 14px; }
+.treasure-close {
+  position: absolute; top: 14px; right: 16px;
+  width: 34px; height: 34px;
+  border: none; border-radius: 50%;
+  background: #f1f3f8; color: var(--muted);
+  font-size: 22px; line-height: 1; cursor: pointer;
+}
+.treasure-close:hover { background: #e5e8f0; color: var(--ink); }
+
+.treasure-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.treasure-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fafbfd;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink);
+  transition: .14s;
+}
+.treasure-item .t-ico { font-size: 26px; }
+.treasure-item:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-2px); }
+.treasure-item.active { border-color: var(--green); background: var(--green-soft); box-shadow: inset 0 0 0 1px var(--green); }
+
+.treasure-output { margin-top: 18px; min-height: 60px; }
+.t-card {
+  padding: 18px 20px;
+  border-radius: 14px;
+  font-size: 16px;
+  line-height: 1.7;
+  text-align: center;
+}
+.t-card .t-tag { font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; opacity: .85; }
+.t-trivia { background: #eef1fe; color: #3b4cd0; }
+.t-dujitang { background: #fff4e5; color: #b45309; }
+.t-fortune { background: #f3ecff; color: #6d28d9; }
+.f-level { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.f-text { font-size: 15px; }
+
+.mars-box { display: flex; flex-direction: column; gap: 12px; }
+.mars-box input {
+  width: 100%; padding: 12px 14px;
+  font-size: 16px; border: 1px solid var(--line); border-radius: 10px;
+  outline: none; background: #fff;
+}
+.mars-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.mars-result { font-size: 20px; min-height: 30px; word-break: break-all; }
+
+/* 彩带 */
+.confetti {
+  position: fixed;
+  top: -24px;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 720px) {
   .layout-grid { grid-template-columns: 1fr; }
@@ -318,4 +422,5 @@ body {
   .big-syllable, .big-word { font-size: 38px; }
   .passage-text { font-size: 20px; letter-spacing: 2px; }
   .slot { width: 46px; height: 52px; font-size: 24px; }
+  .treasure-grid { grid-template-columns: repeat(2, 1fr); }
 }
