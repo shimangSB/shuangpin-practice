@@ -60,18 +60,16 @@ body {
 .scheme-btn.active { background: #fff; color: #4f6ef7; border-color: #fff; font-weight: 600; }
 .topbar-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .treasure-btn {
-  border: 1px solid rgba(255, 224, 150, .6);
-  background: linear-gradient(135deg, #ffb84d, #f59e0b);
-  color: #7a3c00;
-  padding: 7px 16px;
+  border: 1px solid rgba(255,255,255,.4);
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  padding: 6px 14px;
   border-radius: 999px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, .35);
   transition: .15s;
 }
-.treasure-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(245, 158, 11, .45); }
+.treasure-btn:hover { background: rgba(255,255,255,.24); }
 
 /* ---------- 导航 ---------- */
 .nav {
@@ -324,7 +322,7 @@ body {
 
 /* ---------- 百宝箱 ---------- */
 .treasure-overlay {
-  position: fixed; inset: 0;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(15, 20, 32, .55);
   display: none;
   align-items: center; justify-content: center;
