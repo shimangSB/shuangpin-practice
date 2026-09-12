@@ -149,9 +149,22 @@
   var KB_ROWS = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
     ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';'],
-    ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+    ['z', 'x', 'c', 'v', 'b', 'n', 'm', 'BACK']
   ];
   var INITIAL_LABELS = { v: 'zh', i: 'ch', u: 'sh' };
+
+  // 点按屏幕键盘输入（手机/平板的主要输入方式，也方便鼠标操作）
+  function onKeyTap() {
+    if ($('treasureOverlay').classList.contains('open')) return;
+    if ($('settingsOverlay').classList.contains('open')) return;
+    var key = this.getAttribute('data-key');
+    var el = this;
+    el.classList.add('kb-hit');
+    setTimeout(function () { el.classList.remove('kb-hit'); }, 150);
+    if (prefs.sound) playKeySound();
+    if (key === 'BACK') { routeKey('BACKSPACE'); return; }
+    routeKey(key);
+  }
 
   function renderKeyboard() {
     var scheme = currentScheme();
@@ -163,27 +176,31 @@
       row.className = 'kb-row';
       for (var c = 0; c < KB_ROWS[r].length; c++) {
         var key = KB_ROWS[r][c];
+        var isBack = (key === 'BACK');
         var keyEl = document.createElement('div');
-        keyEl.className = 'kb-key';
+        keyEl.className = 'kb-key' + (isBack ? ' kb-fn' : '');
         keyEl.setAttribute('data-key', key);
 
         var letter = document.createElement('span');
         letter.className = 'kb-letter';
-        letter.textContent = key === ';' ? ';' : key.toUpperCase();
+        letter.textContent = isBack ? '⌫' : (key === ';' ? ';' : key.toUpperCase());
         keyEl.appendChild(letter);
 
-        var finals = rev[key] || [];
-        var finEl = document.createElement('span');
-        finEl.className = 'kb-finals';
-        finEl.textContent = finals.length ? finals.join(' ') : '';
-        keyEl.appendChild(finEl);
+        if (!isBack) {
+          var finals = rev[key] || [];
+          var finEl = document.createElement('span');
+          finEl.className = 'kb-finals';
+          finEl.textContent = finals.length ? finals.join(' ') : '';
+          keyEl.appendChild(finEl);
 
-        if (INITIAL_LABELS[key]) {
-          var ini = document.createElement('span');
-          ini.className = 'kb-initial';
-          ini.textContent = INITIAL_LABELS[key];
-          keyEl.appendChild(ini);
+          if (INITIAL_LABELS[key]) {
+            var ini = document.createElement('span');
+            ini.className = 'kb-initial';
+            ini.textContent = INITIAL_LABELS[key];
+            keyEl.appendChild(ini);
+          }
         }
+        keyEl.addEventListener('click', onKeyTap);
         row.appendChild(keyEl);
       }
       kb.appendChild(row);
@@ -713,8 +730,8 @@
     // 面板显隐
     var panels = document.querySelectorAll('.panel');
     for (var j = 0; j < panels.length; j++) panels[j].classList.toggle('active', panels[j].id === 'panel-' + mode);
-    // 键盘显隐（转换器 / 音形模式不显示双拼键盘）
-    $('keyboardWrap').classList.toggle('hidden', mode === 'converter' || state.ime === 'yinxing');
+    // 键盘显隐（转换器 / 音形教学不显示键盘，其余模式都可点按输入）
+    $('keyboardWrap').classList.toggle('hidden', mode === 'converter' || mode === 'yxteach');
 
     if (mode === 'layout') renderLayout();
     if (mode === 'syllable') Drill.start({ newItem: syllableItem, promptEl: $('syPrompt'), slotsEl: $('sySlots'), fbEl: $('syFeedback') });
@@ -1145,6 +1162,11 @@
     renderSchemeButtons();
     renderKeyboard();
     updateStatsBar();
+
+    // 触屏设备标记（显示「点按键盘」提示等）
+    try {
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+    } catch (e) { /* ignore */ }
 
     // 导航
     var navs = document.querySelectorAll('.nav-btn');

@@ -296,7 +296,15 @@ body {
   align-items: center;
   justify-content: center;
   transition: .08s;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
+.kb-key:active { transform: translateY(1px); box-shadow: 0 1px 0 #c9cfe0; }
+.kb-key.kb-fn { width: 74px; }
+.kb-key.kb-fn .kb-letter { font-size: 20px; }
 .kb-letter { font-size: 22px; font-weight: 700; }
 .kb-finals { font-size: 11px; color: var(--muted); line-height: 1.15; text-align: center; }
 .kb-initial {
@@ -309,6 +317,8 @@ body {
 .kb-key.kb-wrong { background: var(--red-soft); border-color: var(--red); }
 .kb-key.kb-wrong .kb-letter, .kb-key.kb-wrong .kb-finals { color: var(--red); }
 .kb-legend { font-size: 12px; color: var(--muted); margin-top: 12px; }
+.kb-tip { display: none; font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+body.touch .kb-tip { display: block; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 .dot-final { background: #eef1f6; border: 1px solid var(--line); }
 .dot-initial { background: #fef3c7; border: 1px solid var(--amber); }
@@ -520,17 +530,105 @@ body.dark .donate-link { background: #2f2418; border-color: #4a3a22; color: #f0a
 body.dark .ps-char.done { color: #5a6376; }
 body.dark .lightbox { background: rgba(0,0,0,.9); }
 
-/* ---------- 响应式 ---------- */
+/* ---------- 响应式 / 移动端 ---------- */
 @media (max-width: 720px) {
   .layout-grid { grid-template-columns: 1fr; }
   .yx-cols { grid-template-columns: 1fr; }
-  .kb-key { width: 44px; height: 52px; }
-  .kb-letter { font-size: 17px; }
-  .kb-finals { font-size: 9px; }
   .big-char { font-size: 64px; }
   .big-syllable, .big-word { font-size: 38px; }
   .passage-text { font-size: 20px; letter-spacing: 2px; }
   .slot { width: 46px; height: 52px; font-size: 24px; }
   .treasure-grid { grid-template-columns: repeat(2, 1fr); }
   .set-label { width: 100%; }
+
+  /* 顶栏紧凑 */
+  .topbar { padding: 12px 16px; gap: 10px; }
+  .brand h1 { font-size: 18px; }
+  .tagline { display: none; }
+  .topbar-right { gap: 8px; }
+  .scheme-label { display: none; }
+  .scheme-btn, .ime-btn { padding: 5px 10px; font-size: 13px; }
+  .treasure-btn { padding: 6px 10px; font-size: 13px; }
+  .icon-btn { width: 32px; height: 32px; font-size: 14px; }
+
+  /* 导航横向滚动 */
+  .nav {
+    padding: 8px 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn { white-space: nowrap; padding: 8px 12px; font-size: 14px; touch-action: manipulation; }
+
+  /* 主体与练习区 */
+  .main { padding: 16px 12px 18px; }
+  .panel-head h2 { font-size: 18px; }
+  .drill { padding: 24px 14px; gap: 14px; }
+  .prompt { min-height: 66px; }
+  .layout-card { padding: 16px 14px; overflow-x: auto; }
+  .converter .cv-input { font-size: 16px; }
+
+  /* 屏幕键盘：铺满宽度 + 吸底，方便拇指点按 */
+  .keyboard-wrap {
+    position: sticky;
+    bottom: 0;
+    margin-top: 16px;
+    padding: 10px 2px calc(10px + env(safe-area-inset-bottom));
+    background: var(--bg);
+    box-shadow: 0 -6px 16px rgba(16, 24, 40, .08);
+    z-index: 6;
+  }
+  .keyboard { width: 100%; gap: 6px; }
+  .kb-row { gap: 4px; width: 100%; }
+  .kb-key {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: 48px;
+    border-radius: 8px;
+    box-shadow: 0 2px 0 #d7dce6;
+  }
+  .kb-key.kb-fn { flex: 2 1 0; width: auto; }
+  .kb-letter { font-size: 16px; }
+  .kb-finals { font-size: 8px; line-height: 1.05; }
+  .kb-initial { font-size: 8px; top: 2px; right: 3px; }
+  .kb-legend { display: none; }
+  .kb-tip { display: block; margin-bottom: 8px; }
+
+  /* 弹窗占满 */
+  .treasure-overlay { padding: 10px; align-items: flex-end; }
+  .treasure-modal { max-height: 92vh; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); border-radius: 18px 18px 14px 14px; }
+  .treasure-item { padding: 12px 6px; font-size: 13px; }
+  .treasure-item .t-ico { font-size: 22px; }
+
+  /* 底栏 */
+  .footer { padding: 12px 14px; gap: 8px; }
+  .footer .stats { gap: 12px; font-size: 12px; }
+  .tools { gap: 10px; }
+
+  /* 触屏：加大点击区域、去掉点击高亮 */
+  button, .nav-btn, .scheme-btn, .ime-btn, .treasure-btn, .icon-btn,
+  .choice-btn, .treasure-item, .start-btn, .seg-btn, .donate-link {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* 更窄的手机（≤380px）进一步压缩 */
+@media (max-width: 380px) {
+  .kb-key { height: 42px; }
+  .kb-letter { font-size: 14px; }
+  .kb-finals { font-size: 7px; }
+  .big-char { font-size: 54px; }
+  .slot { width: 40px; height: 46px; font-size: 21px; }
+  .ime-btn { padding: 6px 10px; font-size: 13px; }
+}
+
+/* 横屏手机：键盘小一点，避免占满 */
+@media (max-width: 900px) and (max-height: 460px) {
+  .keyboard-wrap { position: static; }
+  .kb-key { height: 40px; }
+  .kb-finals { display: none; }
 }
