@@ -17,28 +17,35 @@ function toShuangpin(syl, scheme) {
   if (!syl) return null;
   syl = String(syl).trim().toLowerCase();
   if (!syl) return null;
-  if (syl.charAt(0) === 'y') {
-    var fy = Y_MAP[syl];
-    if (!fy) return null;
-    var ky = scheme.finals[fy];
-    if (!ky) return null;
-    return 'y' + ky;
-  }
-  if (syl.charAt(0) === 'w') {
-    var fw = W_MAP[syl];
-    if (!fw) return null;
-    var kw = scheme.finals[fw];
-    if (!kw) return null;
-    return 'w' + kw;
+  var isXiaohe = scheme.zeroMode === 'first';
+  if (syl.charAt(0) === 'y' || syl.charAt(0) === 'w') {
+    var pref = syl.charAt(0);
+    if (isXiaohe) {
+      var rest = syl.slice(1);
+      var kr = scheme.finals[rest];
+      if (!kr && rest === 'ue') kr = scheme.finals['üe'];
+      if (!kr) return null;
+      return pref + kr;
+    }
+    var f = (pref === 'y') ? Y_MAP[syl] : W_MAP[syl];
+    if (!f) return null;
+    var k = scheme.finals[f];
+    if (!k) return null;
+    return pref + k;
   }
   var firstTwo = syl.slice(0, 2);
   var isInitial = INITIALS.indexOf(syl.charAt(0)) >= 0 || INITIALS.indexOf(firstTwo) >= 0;
   if (!isInitial) {
-    if (syl === 'er' && scheme.zeroMode === 'first') return 'er';
-    var prefix = scheme.zeroMode === 'first' ? syl.charAt(0) : 'o';
+    if (isXiaohe) {
+      if (syl.length === 1) return syl + syl;
+      if (syl.length === 2) return syl;
+      var k3 = scheme.finals[syl];
+      if (!k3) return null;
+      return syl.charAt(0) + k3;
+    }
     var k0 = scheme.finals[syl];
     if (!k0) return null;
-    return prefix + k0;
+    return 'o' + k0;
   }
   var initial, final;
   if (INITIALS.indexOf(firstTwo) >= 0) {
@@ -47,7 +54,11 @@ function toShuangpin(syl, scheme) {
     initial = syl.charAt(0); final = syl.slice(1);
   }
   if ((initial === 'j' || initial === 'q' || initial === 'x') && final.charAt(0) === 'u') {
-    final = JQX_U[final] || final;
+    if (isXiaohe) {
+      if (final === 'ue') final = 'üe';
+    } else {
+      final = JQX_U[final] || final;
+    }
   }
   var ik = scheme.initials[initial] || initial;
   var fk = scheme.finals[final];
@@ -61,8 +72,14 @@ var cases = [
   // [scheme, syllable, expected]
   ['xiaohe', 'zhong', 'vs'], ['xiaohe', 'guo', 'go'], ['xiaohe', 'shuang', 'ul'],
   ['xiaohe', 'pin', 'pb'], ['xiaohe', 'xiao', 'xn'], ['xiaohe', 'wo', 'wo'],
-  ['xiaohe', 'er', 'er'], ['xiaohe', 'a', 'aa'], ['xiaohe', 'ai', 'ad'],
-  ['xiaohe', 'ang', 'ah'], ['xiaohe', 'ying', 'yk'], ['xiaohe', 'you', 'yq'],
+  ['xiaohe', 'er', 'er'], ['xiaohe', 'a', 'aa'], ['xiaohe', 'ai', 'ai'],
+  ['xiaohe', 'an', 'an'], ['xiaohe', 'ao', 'ao'], ['xiaohe', 'ei', 'ei'],
+  ['xiaohe', 'en', 'en'], ['xiaohe', 'ou', 'ou'], ['xiaohe', 'e', 'ee'], ['xiaohe', 'o', 'oo'],
+  ['xiaohe', 'ang', 'ah'], ['xiaohe', 'eng', 'eg'],
+  ['xiaohe', 'yang', 'yh'], ['xiaohe', 'wang', 'wh'], ['xiaohe', 'wei', 'ww'],
+  ['xiaohe', 'yu', 'yu'], ['xiaohe', 'ye', 'ye'], ['xiaohe', 'ya', 'ya'], ['xiaohe', 'weng', 'wg'],
+  ['xiaohe', 'ju', 'ju'], ['xiaohe', 'xu', 'xu'], ['xiaohe', 'qu', 'qu'],
+  ['xiaohe', 'ying', 'yk'], ['xiaohe', 'you', 'yz'],
   ['xiaohe', 'yuan', 'yr'], ['xiaohe', 'yue', 'yt'], ['xiaohe', 'yun', 'yy'],
   ['xiaohe', 'nü', 'nv'], ['xiaohe', 'lüe', 'lt'], ['xiaohe', 'jue', 'jt'],
   ['xiaohe', 'juan', 'jr'], ['xiaohe', 'jun', 'jy'], ['xiaohe', 'zhi', 'vi'],
@@ -113,3 +130,20 @@ if (bad.length) {
 } else {
   console.log('全部音节/单字/词语/文章均可转换（小鹤）✓');
 }
+
+/* ---------- 小鹤音形例字校验 ---------- */
+/* 校核：全码长度必须是 4，且前两位（音码）等于该字拼音的小鹤双拼编码 */
+function checkYinxing() {
+  var bads = [];
+  DATA.YX_EXAMPLES.forEach(function (e) {
+    var ch = e[0], py = e[1], code = e[2], shou = e[3], mo = e[4];
+    if (code.length !== 4) { bads.push(ch + ' 码长!=4: ' + code); return; }
+    if (!shou || !mo) bads.push(ch + ' 缺首/末形');
+    var yin = toShuangpin(py, byId('xiaohe'));
+    if (yin !== code.slice(0, 2)) bads.push(ch + '(' + py + ') 音码应为 ' + yin + '，实际 ' + code.slice(0, 2) + ' [' + code + ']');
+  });
+  return bads;
+}
+var yxBad = checkYinxing();
+console.log('音形例字：', DATA.YX_EXAMPLES.length - yxBad.length + '/' + DATA.YX_EXAMPLES.length, '音码校验通过');
+if (yxBad.length) console.log(yxBad.join('\n'));

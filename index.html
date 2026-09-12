@@ -1,19 +1,26 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>双拼练习 · 多种模式</title>
-  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
       <h1>⌨️ 双拼练习</h1>
-      <p class="tagline">一声一韵，两键一字 · 支持小鹤 / 微软 / 自然码 / 搜狗</p>
+      <p class="tagline">双拼 · 小鹤音形 · 多种练习模式</p>
     </div>
     <div class="topbar-right">
-      <div class="scheme-box">
+      <div class="ime-box">
+        <span class="scheme-label">输入法</span>
+        <div id="imeSwitch" class="ime-switch">
+          <button class="ime-btn active" data-ime="shuangpin">双拼</button>
+          <button class="ime-btn" data-ime="yinxing">小鹤音形</button>
+        </div>
+      </div>
+      <div class="scheme-box" id="schemeBox">
         <span class="scheme-label">方案</span>
         <div id="schemeSelect" class="scheme-select"></div>
       </div>
@@ -22,13 +29,15 @@
   </header>
 
   <nav class="nav" id="nav">
-    <button class="nav-btn" data-mode="layout">键位学习</button>
-    <button class="nav-btn" data-mode="syllable">音节练习</button>
-    <button class="nav-btn" data-mode="character">单字练习</button>
-    <button class="nav-btn" data-mode="word">词语练习</button>
-    <button class="nav-btn" data-mode="passage">文章跟打</button>
-    <button class="nav-btn" data-mode="reverse">键位反查</button>
-    <button class="nav-btn" data-mode="converter">转换器</button>
+    <button class="nav-btn" data-mode="layout" data-ime="shuangpin">键位学习</button>
+    <button class="nav-btn" data-mode="syllable" data-ime="shuangpin">音节练习</button>
+    <button class="nav-btn" data-mode="character" data-ime="shuangpin">单字练习</button>
+    <button class="nav-btn" data-mode="word" data-ime="shuangpin">词语练习</button>
+    <button class="nav-btn" data-mode="passage" data-ime="shuangpin">文章跟打</button>
+    <button class="nav-btn" data-mode="reverse" data-ime="shuangpin">键位反查</button>
+    <button class="nav-btn" data-mode="converter" data-ime="shuangpin">转换器</button>
+    <button class="nav-btn" data-mode="yxteach" data-ime="yinxing">音形教学</button>
+    <button class="nav-btn" data-mode="yxpractice" data-ime="yinxing">音形练习</button>
   </nav>
 
   <main class="main">
@@ -50,13 +59,13 @@
           <h3>声母特例</h3>
           <div id="initialExamples" class="chip-wrap"></div>
           <h3>零声母规则</h3>
-          <p class="hint-text">零声母（无开头的 a/o/e 韵母）按下表编码；以 y/w 开头的用 y/w 作首键。</p>
+          <p class="hint-text">零声母（a/o/e 开头）：单字母双写（啊=aa、哦=oo、额=ee）；双字母韵母原样（爱=ai、恩=en、欧=ou）；三字母用韵母键（昂=ah、鞥=eg）。y/w 开头用 y/w 作首键 + 后续韵母键（央=yh、优=yz）。</p>
           <div id="zeroExamples" class="chip-wrap"></div>
           <h3>小贴士</h3>
           <ul class="tips">
             <li>每个音节固定两键：<b>声母键 + 韵母键</b>。</li>
             <li>zh / ch / sh 分别用 <b>v / i / u</b> 三键。</li>
-            <li><b>v 键可用 u 代替</b>：如「局」可打 <b>jv</b> 或 <b>ju</b>（zh/ui/ü 的 v 都可输 u，见右下角开关）。</li>
+            <li><b>u 与 v 可以互相代替</b>：如「局」可打 <b>ju</b> 或 <b>jv</b>（见右下角开关）。</li>
             <li>先在「音节练习」熟悉规则，再到「单字 / 词语」实战。</li>
             <li>键盘上直接标出了每个键对应的韵母，可随时对照。</li>
           </ul>
@@ -152,6 +161,52 @@
       </div>
     </section>
 
+    <!-- 音形教学 -->
+    <section id="panel-yxteach" class="panel">
+      <div class="panel-head">
+        <h2>小鹤音形 · 教学</h2>
+        <p class="note">小鹤音形 = <b>音码</b>（小鹤双拼，2 键）+ <b>形码</b>（首形 + 末形，2 键），每字共 4 键。</p>
+      </div>
+      <div class="yx-cols">
+        <div class="layout-card">
+          <h3>① 笔画键（拆分最小单元）</h3>
+          <table class="final-table" id="yxStrokeTable"><tbody></tbody></table>
+          <h3>③ 小字字根（按声母定键，免记忆）</h3>
+          <p class="hint-text">「小字」是不能再拆出字/部件、或由单笔画衍生的独体字，取其<b>声母</b>所在的键即可（zh→v、ch→i、sh→u）。</p>
+          <div id="yxXiaozi" class="yx-root-list"></div>
+        </div>
+        <div class="layout-card">
+          <h3>② 部件字根（偏旁部首，按称谓定键）</h3>
+          <table class="final-table yx-bj"><tbody id="yxBujianTable"></tbody></table>
+        </div>
+      </div>
+      <div class="layout-card yx-rules">
+        <h3>④ 拆分规则</h3>
+        <ul class="tips">
+          <li><b>字取首末</b>：取字的首、末两个字根（小字/部件），孰大优先，无则取笔画。</li>
+          <li><b>相交不拆</b>：字根与其它笔画相交则被破坏，不取（如「中」不能拆「口」）。</li>
+          <li><b>插隔不取</b>：字根被单笔插入或被结构隔开，则不再是字根（如「办」取「力丶」）。</li>
+          <li><b>廴辶优先</b>：以「廴 辶」为部首的字，首码先取（如「这=辶文」「建=廴聿」）。</li>
+        </ul>
+        <h3>⑤ 示例</h3>
+        <div id="yxExamples" class="chip-wrap"></div>
+      </div>
+    </section>
+
+    <!-- 音形练习 -->
+    <section id="panel-yxpractice" class="panel">
+      <div class="panel-head">
+        <h2>音形练习</h2>
+        <p class="note">看汉字，敲出它的完整音形码（音码 2 键 + 形码 2 键）。</p>
+      </div>
+      <div class="drill">
+        <div class="prompt" id="yxPrompt"></div>
+        <div class="hint" id="yxHint"></div>
+        <div class="slots" id="yxSlots"></div>
+        <div class="feedback" id="yxFeedback"></div>
+      </div>
+    </section>
+
     <!-- 键盘 -->
     <div id="keyboardWrap" class="keyboard-wrap">
       <div id="keyboard" class="keyboard"></div>
@@ -195,7 +250,7 @@
     </div>
   </div>
 
-  <script src="data.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="data.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

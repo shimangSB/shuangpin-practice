@@ -13,6 +13,7 @@
   var state = {
     schemeId: 'xiaohe',
     mode: 'layout',
+    ime: 'shuangpin', // 'shuangpin' | 'yinxing'
     showHint: true,
     vuInterchange: true, // v 键可用 u 代替（如「局」= jv 或 ju）
     allTime: { total: 0, correct: 0, bestStreak: 0 } // 累计（localStorage）
@@ -32,19 +33,24 @@
   }
 
   /* ---------------- v/u 互通 ---------------- */
-  // 规则：标准码中的 v（zh / ui / ü）可以用 u 代替输入。
+  // 规则：u 与 v 可以互相代替（如「局」= ju 或 jv）
   function codeMatches(typed, expected) {
     if (typed.length !== expected.length) return false;
     for (var i = 0; i < typed.length; i++) {
       var t = typed.charAt(i), e = expected.charAt(i);
       if (t === e) continue;
-      if (state.vuInterchange && e === 'v' && t === 'u') continue;
+      if (state.vuInterchange && ((e === 'v' && t === 'u') || (e === 'u' && t === 'v'))) continue;
       return false;
     }
     return true;
   }
   function vuVariant(code) {
-    return code.replace(/v/g, 'u');
+    var out = '';
+    for (var i = 0; i < code.length; i++) {
+      var c = code.charAt(i);
+      out += (c === 'v') ? 'u' : (c === 'u' ? 'v' : c);
+    }
+    return out;
   }
   function displayCode(code) {
     if (!state.vuInterchange) return code;
@@ -68,31 +74,41 @@
     syl = String(syl).trim().toLowerCase();
     if (!syl) return null;
 
+    var isXiaohe = scheme.zeroMode === 'first';
+
     // y/w 开头的零声母
-    if (syl.charAt(0) === 'y') {
-      var fy = Y_MAP[syl];
-      if (!fy) return null;
-      var ky = scheme.finals[fy];
-      if (!ky) return null;
-      return 'y' + ky;
-    }
-    if (syl.charAt(0) === 'w') {
-      var fw = W_MAP[syl];
-      if (!fw) return null;
-      var kw = scheme.finals[fw];
-      if (!kw) return null;
-      return 'w' + kw;
+    if (syl.charAt(0) === 'y' || syl.charAt(0) === 'w') {
+      var pref = syl.charAt(0);
+      if (isXiaohe) {
+        // 小鹤：y/w 作首键 + 剩余部分（按字面）的韵母键，如 yang→yh、you→yz、yu→yu
+        var rest = syl.slice(1);
+        var kr = scheme.finals[rest];
+        if (!kr && rest === 'ue') kr = scheme.finals['üe'];
+        if (!kr) return null;
+        return pref + kr;
+      }
+      var f = (pref === 'y') ? Y_MAP[syl] : W_MAP[syl];
+      if (!f) return null;
+      var k = scheme.finals[f];
+      if (!k) return null;
+      return pref + k;
     }
 
     // 纯元音零声母（a/o/e 开头）
     var firstTwo = syl.slice(0, 2);
     var isInitial = INITIALS.indexOf(syl.charAt(0)) >= 0 || INITIALS.indexOf(firstTwo) >= 0;
     if (!isInitial) {
-      if (syl === 'er' && scheme.zeroMode === 'first') return 'er';
-      var prefix = scheme.zeroMode === 'first' ? syl.charAt(0) : 'o';
+      if (isXiaohe) {
+        // 小鹤：单字母双写（a→aa），双字母原样（ai→ai、en→en、er→er），三字母首字母+韵母键（ang→ah）
+        if (syl.length === 1) return syl + syl;
+        if (syl.length === 2) return syl;
+        var k3 = scheme.finals[syl];
+        if (!k3) return null;
+        return syl.charAt(0) + k3;
+      }
       var k0 = scheme.finals[syl];
       if (!k0) return null;
-      return prefix + k0;
+      return 'o' + k0;
     }
 
     // 常规：声母 + 韵母
@@ -102,9 +118,13 @@
     } else {
       initial = syl.charAt(0); final = syl.slice(1);
     }
-    // j/q/x 后面的 u 实际是 ü
+    // j/q/x 后面的 u：小鹤按字面（ju→ju），其余方案视为 ü（ju→jv）
     if ((initial === 'j' || initial === 'q' || initial === 'x') && final.charAt(0) === 'u') {
-      final = JQX_U[final] || final;
+      if (isXiaohe) {
+        if (final === 'ue') final = 'üe'; // jue / que / xue
+      } else {
+        final = JQX_U[final] || final;
+      }
     }
     var ik = scheme.initials[initial] || initial;
     var fk = scheme.finals[final];
@@ -498,6 +518,110 @@
     }
   };
 
+  /* ---------- 小鹤音形 ---------- */
+  var YX_TEACH = [
+    ['鹤', 'he', 'hedn', '点', '鸟'], ['码', 'ma', 'maum', '石', '马'],
+    ['走', 'zou', 'zztr', '土', '人'], ['武', 'wu', 'wuav', '一', '止'],
+    ['一', 'yi', 'yiaa', '横', '横'], ['乙', 'yi', 'yivv', '折', '折'],
+    ['旦', 'dan', 'djoa', '日', '一'], ['建', 'jian', 'jmzy', '廴', '聿'],
+    ['国', 'guo', 'goky', '囗', '玉'], ['语', 'yu', 'yvyk', '讠', '口'],
+    ['框', 'kuang', 'klmw', '木', '王'], ['挂', 'gua', 'gxft', '扌', '土'],
+    ['看', 'kan', 'kjuo', '龵', '目'], ['雪', 'xue', 'xtye', '雨', '彐']
+  ];
+
+  function yxMatches(typed, expected) {
+    if (typed.length !== expected.length) return false;
+    for (var i = 0; i < typed.length; i++) {
+      var t = typed.charAt(i), e = expected.charAt(i);
+      if (t === e) continue;
+      if (state.vuInterchange && i < 2 && ((e === 'v' && t === 'u') || (e === 'u' && t === 'v'))) continue; // v/u 互通只作用于音码
+      return false;
+    }
+    return true;
+  }
+
+  var YXDrill = {
+    active: false,
+    item: null,
+    buffer: '',
+    start() { this.active = true; this.next(); },
+    stop() { this.active = false; this.buffer = ''; },
+    next() {
+      var e = pickRandom(DATA.YX_EXAMPLES);
+      this.item = e; // [汉字, 拼音, 全码, 首形, 末形]
+      $('yxPrompt').innerHTML = '<span class="big-char">' + e[0] + '</span>';
+      $('yxHint').innerHTML = state.showHint ? ('拼音：' + e[1] + '　·　音码 ' + e[2].slice(0, 2)) : '';
+      this.buffer = '';
+      renderSlots($('yxSlots'), 4, '');
+      setFeedback($('yxFeedback'), '4 键（音 2 + 形 2）', '');
+    },
+    key(k) {
+      if (!this.active) return;
+      if (k === 'BACKSPACE') {
+        if (this.buffer.length > 0) { this.buffer = this.buffer.slice(0, -1); renderSlots($('yxSlots'), 4, this.buffer); }
+        return;
+      }
+      if (!/^[a-z;]$/.test(k)) return;
+      this.buffer += k;
+      renderSlots($('yxSlots'), 4, this.buffer);
+      if (this.buffer.length >= 4) {
+        var ok = yxMatches(this.buffer, this.item[2]);
+        recordResult(ok);
+        var code = this.item[2];
+        if (ok) {
+          setFeedback($('yxFeedback'), '✓ 正确 ' + code + '（' + this.item[3] + ' + ' + this.item[4] + '）', 'ok');
+          if (treasure.confetti) spawnConfetti();
+        } else {
+          setFeedback($('yxFeedback'), '✗ 应为 ' + code + '（音 ' + code.slice(0, 2) + '，形 ' + this.item[3] + '+' + this.item[4] + '）', 'err');
+        }
+        var self = this;
+        setTimeout(function () { if (self.active) self.next(); }, ok ? 350 : 1400);
+      }
+    }
+  };
+
+  function renderYinxingTeach() {
+    // ① 笔画表
+    var st = $('yxStrokeTable');
+    st.innerHTML = '';
+    for (var i = 0; i < DATA.YX_STROKES.length; i++) {
+      var s = DATA.YX_STROKES[i];
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="t-key">' + s[0].toUpperCase() + '</td><td class="t-final">' + s[1] + '</td><td class="t-final">' + s[2] + '</td>';
+      st.appendChild(tr);
+    }
+    // ② 部件字根表
+    var bj = $('yxBujianTable');
+    bj.innerHTML = '';
+    for (var j = 0; j < DATA.YX_BUIJIAN.length; j++) {
+      var b = DATA.YX_BUIJIAN[j];
+      var tr2 = document.createElement('tr');
+      tr2.innerHTML = '<td class="t-key">' + b[0].toUpperCase() + '</td><td class="t-final">' + b[1] + '</td><td class="t-memo">' + b[2] + '</td>';
+      bj.appendChild(tr2);
+    }
+    // ③ 小字字根
+    var xz = $('yxXiaozi');
+    xz.innerHTML = '';
+    for (var k = 0; k < DATA.YX_XIAOZI.length; k++) {
+      var x = DATA.YX_XIAOZI[k];
+      if (!x[1]) continue;
+      var chip = document.createElement('div');
+      chip.className = 'yx-root';
+      chip.innerHTML = '<span class="yx-key">' + x[0].toUpperCase() + '</span><span class="yx-chars">' + x[1] + '</span>';
+      xz.appendChild(chip);
+    }
+    // ⑤ 示例
+    var ex = $('yxExamples');
+    ex.innerHTML = '';
+    for (var m = 0; m < YX_TEACH.length; m++) {
+      var t = YX_TEACH[m];
+      var chip2 = document.createElement('span');
+      chip2.className = 'cv-chip';
+      chip2.innerHTML = '<span class="cv-py">' + t[0] + '</span><span class="cv-arrow">→</span><span class="cv-code">' + t[2] + '</span><span class="cv-memo">' + t[3] + '+' + t[4] + '</span>';
+      ex.appendChild(chip2);
+    }
+  }
+
   /* ---------- 转换器 ---------- */
   function renderConverter() {
     var input = $('cvInput').value.trim();
@@ -577,6 +701,7 @@
   function switchMode(mode) {
     if (Drill.active) Drill.stop();
     if (Passage.active) Passage.stop();
+    if (YXDrill.active) YXDrill.stop();
     state.mode = mode;
     // 导航高亮
     var navs = document.querySelectorAll('.nav-btn');
@@ -584,8 +709,8 @@
     // 面板显隐
     var panels = document.querySelectorAll('.panel');
     for (var j = 0; j < panels.length; j++) panels[j].classList.toggle('active', panels[j].id === 'panel-' + mode);
-    // 键盘显隐（转换器不显示键盘）
-    $('keyboardWrap').classList.toggle('hidden', mode === 'converter');
+    // 键盘显隐（转换器 / 音形模式不显示双拼键盘）
+    $('keyboardWrap').classList.toggle('hidden', mode === 'converter' || state.ime === 'yinxing');
 
     if (mode === 'layout') renderLayout();
     if (mode === 'syllable') Drill.start({ newItem: syllableItem, promptEl: $('syPrompt'), slotsEl: $('sySlots'), fbEl: $('syFeedback') });
@@ -594,6 +719,18 @@
     if (mode === 'reverse') reverseStart();
     if (mode === 'passage') Passage.start();
     if (mode === 'converter') renderConverter();
+    if (mode === 'yxteach') renderYinxingTeach();
+    if (mode === 'yxpractice') YXDrill.start();
+  }
+
+  function switchIme(ime) {
+    state.ime = ime;
+    var imeBtns = document.querySelectorAll('.ime-btn');
+    for (var i = 0; i < imeBtns.length; i++) imeBtns[i].classList.toggle('active', imeBtns[i].getAttribute('data-ime') === ime);
+    $('schemeBox').style.display = ime === 'shuangpin' ? '' : 'none';
+    var navs = document.querySelectorAll('.nav-btn');
+    for (var j = 0; j < navs.length; j++) navs[j].style.display = navs[j].getAttribute('data-ime') === ime ? '' : 'none';
+    switchMode(ime === 'shuangpin' ? 'layout' : 'yxteach');
   }
 
   function reverseStart() {
@@ -644,6 +781,8 @@
       Drill.key(k);
     } else if (state.mode === 'passage') {
       Passage.key(k);
+    } else if (state.mode === 'yxpractice') {
+      YXDrill.key(k);
     }
   }
 
@@ -865,6 +1004,7 @@
       state.showHint = this.checked;
       if (state.mode === 'character' || state.mode === 'word') switchMode(state.mode);
       else if (state.mode === 'passage' && Passage.active) Passage.render();
+      else if (state.mode === 'yxpractice' && YXDrill.active) YXDrill.next();
     });
 
     // v/u 互通开关
@@ -898,6 +1038,14 @@
     // 转换器输入
     $('cvInput').addEventListener('input', renderConverter);
 
+    // 输入法切换（双拼 / 小鹤音形）
+    var imeBtns = document.querySelectorAll('.ime-btn');
+    for (var ib = 0; ib < imeBtns.length; ib++) {
+      imeBtns[ib].addEventListener('click', function () {
+        switchIme(this.getAttribute('data-ime'));
+      });
+    }
+
     // 百宝箱
     $('treasureBtn').addEventListener('click', openTreasure);
     $('treasureClose').addEventListener('click', closeTreasure);
@@ -912,7 +1060,7 @@
     }
     refreshTreasureToggles();
 
-    switchMode('layout');
+    switchIme('shuangpin');
   }
 
   document.addEventListener('DOMContentLoaded', init);
