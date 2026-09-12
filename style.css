@@ -282,11 +282,24 @@ body {
 /* ---------- 键盘 ---------- */
 .keyboard-wrap { margin-top: 28px; text-align: center; }
 .keyboard-wrap.hidden { display: none; }
-.keyboard { display: inline-flex; flex-direction: column; gap: 8px; }
-.kb-row { display: flex; gap: 8px; justify-content: center; }
+/* 真实 QWERTY 错位：第 2 排右移 1/4 键，第 3 排右移 3/4 键 */
+.keyboard {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  --ku: 62px;                 /* 键宽 */
+  --kg: 8px;                  /* 键间距 */
+  --step: calc(var(--ku) + var(--kg));
+}
+.kb-row { display: flex; gap: var(--kg); justify-content: flex-start; }
+.kb-row:nth-child(2) { margin-left: calc(var(--step) * 0.25); }
+.kb-row:nth-child(3) { margin-left: calc(var(--step) * 0.75); }
 .kb-key {
   position: relative;
-  width: 62px; height: 66px;
+  width: var(--ku);
+  height: 66px;
+  flex: 0 0 auto;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -303,7 +316,7 @@ body {
   touch-action: manipulation;
 }
 .kb-key:active { transform: translateY(1px); box-shadow: 0 1px 0 #c9cfe0; }
-.kb-key.kb-fn { width: 74px; }
+.kb-key.kb-fn { width: calc(var(--ku) * 1.45); }
 .kb-key.kb-fn .kb-letter { font-size: 20px; }
 .kb-letter { font-size: 22px; font-weight: 700; }
 .kb-finals { font-size: 11px; color: var(--muted); line-height: 1.15; text-align: center; }
@@ -580,18 +593,10 @@ body.dark .lightbox { background: rgba(0,0,0,.9); }
     box-shadow: 0 -6px 16px rgba(16, 24, 40, .08);
     z-index: 6;
   }
-  .keyboard { width: 100%; gap: 6px; }
-  .kb-row { gap: 4px; width: 100%; }
-  .kb-key {
-    flex: 1 1 0;
-    min-width: 0;
-    width: auto;
-    height: 48px;
-    border-radius: 8px;
-    box-shadow: 0 2px 0 #d7dce6;
-  }
-  .kb-key.kb-fn { flex: 2 1 0; width: auto; }
-  .kb-letter { font-size: 16px; }
+  .keyboard { --ku: min(calc((100vw - 70px) / 10), 62px); --kg: 3px; gap: 6px; }
+  .kb-key { height: 46px; border-radius: 7px; box-shadow: 0 2px 0 #d7dce6; }
+  .kb-letter { font-size: 15px; }
+  .kb-key.kb-fn .kb-letter { font-size: 15px; }
   .kb-finals { font-size: 8px; line-height: 1.05; }
   .kb-initial { font-size: 8px; top: 2px; right: 3px; }
   .kb-legend { display: none; }
