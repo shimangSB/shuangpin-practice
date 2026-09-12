@@ -309,10 +309,12 @@
         recordResult(ok);
         if (ok) {
           flashKeys(this.answer, 'kb-correct', 500);
-          if (treasure.confetti) spawnConfetti();
+          if (prefs.confetti) spawnConfetti();
+          if (prefs.soundCorrect) playCorrect();
           setFeedback(this.fbEl, '✓ 正确 ' + displayCode(this.answer), 'ok');
         } else {
           flashKeys(this.answer, 'kb-wrong', 1200);
+          if (prefs.soundWrong) playWrong();
           setFeedback(this.fbEl, '✗ 应为 ' + displayCode(this.answer), 'err');
         }
         var self = this;
@@ -487,8 +489,8 @@
       if (this.buffer.length >= code.length) {
         var ok = codeMatches(this.buffer, code);
         this.typedChars++;
-        if (ok) { this.correctCount++; flashKeys(code, 'kb-correct', 300); if (treasure.confetti) spawnConfetti(); }
-        else { this.wrongCount++; flashKeys(code, 'kb-wrong', 500); }
+        if (ok) { this.correctCount++; flashKeys(code, 'kb-correct', 300); if (prefs.confetti) spawnConfetti(); if (prefs.soundCorrect) playCorrect(); }
+        else { this.wrongCount++; flashKeys(code, 'kb-wrong', 500); if (prefs.soundWrong) playWrong(); }
         var doneSpan = $('psText').querySelector('.ps-char.current');
         if (doneSpan) { doneSpan.classList.remove('current'); doneSpan.classList.add(ok ? 'ok' : 'bad'); }
         this.pos++;
@@ -570,9 +572,11 @@
         var code = this.item[2];
         if (ok) {
           setFeedback($('yxFeedback'), '✓ 正确 ' + code + '（' + this.item[3] + ' + ' + this.item[4] + '）', 'ok');
-          if (treasure.confetti) spawnConfetti();
+          if (prefs.confetti) spawnConfetti();
+          if (prefs.soundCorrect) playCorrect();
         } else {
           setFeedback($('yxFeedback'), '✗ 应为 ' + code + '（音 ' + code.slice(0, 2) + '，形 ' + this.item[3] + '+' + this.item[4] + '）', 'err');
+          if (prefs.soundWrong) playWrong();
         }
         var self = this;
         setTimeout(function () { if (self.active) self.next(); }, ok ? 350 : 1400);
@@ -759,14 +763,14 @@
       e.preventDefault();
       // 闪烁按下的键
       flashKeys(lower, 'kb-hit', 160);
-      if (treasure.sound) playKeySound();
+      if (prefs.sound) playKeySound();
       routeKey(lower);
       return;
     }
     if (k === ';' || k === ':') {
       e.preventDefault();
       flashKeys(';', 'kb-hit', 160);
-      if (treasure.sound) playKeySound();
+      if (prefs.sound) playKeySound();
       routeKey(';');
     }
   });
@@ -809,8 +813,41 @@
     for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('active', btns[j].getAttribute('data-scheme') === state.schemeId);
   }
 
+  /* ---------- 偏好设置（持久化） ---------- */
+  var PREFS_KEY = 'sp_prefs_v1';
+  var prefs = {
+    theme: 'light',        // light | dark
+    sound: true,           // 敲击音效
+    timbre: 'click',       // click | thock | typewriter | pop
+    volume: 0.35,          // 0 ~ 1
+    soundCorrect: true,    // 答对提示音
+    soundWrong: false,     // 答错提示音
+    confetti: false,       // 答对彩带
+    catpaw: false          // 猫爪光标
+  };
+  try {
+    var savedPrefs = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null');
+    if (savedPrefs && typeof savedPrefs === 'object') {
+      for (var pk in prefs) if (savedPrefs.hasOwnProperty(pk)) prefs[pk] = savedPrefs[pk];
+    }
+  } catch (e) { /* ignore */ }
+  function savePrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) { /* ignore */ }
+  }
+  function applyTheme() {
+    document.body.classList.toggle('dark', prefs.theme === 'dark');
+    var tb = $('themeBtn');
+    if (tb) tb.textContent = prefs.theme === 'dark' ? '☀️' : '🌙';
+  }
+  function applySoundBtn() {
+    var sb = $('soundBtn');
+    if (sb) {
+      sb.textContent = prefs.sound ? '🔊' : '🔇';
+      sb.classList.toggle('off', !prefs.sound);
+    }
+  }
+
   /* ---------- 百宝箱 ---------- */
-  var treasure = { sound: false, confetti: false, catpaw: false };
 
   var TREASURE_DATA = {
     trivia: [
@@ -863,7 +900,9 @@
     '老':'咾','师':'師','生':'笙','世':'丗','界':'堺','女':'钕','男':'侽','风':'颩'
   };
 
+  /* ---------- 音效引擎 ---------- */
   var audioCtx = null;
+  var noiseBuffer = null;
   function ensureAudio() {
     if (!audioCtx) {
       var AC = window.AudioContext || window.webkitAudioContext;
@@ -871,27 +910,75 @@
     }
     return audioCtx;
   }
+  function getNoise(ctx) {
+    if (!noiseBuffer) {
+      var len = Math.floor(ctx.sampleRate * 0.08);
+      noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+      var d = noiseBuffer.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return noiseBuffer;
+  }
+  function noiseHit(ctx, t, freq, q, vol, dur) {
+    var src = ctx.createBufferSource();
+    src.buffer = getNoise(ctx);
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+  function tone(ctx, t, type, f0, f1, vol, dur) {
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+
+  // 敲击音效（多种音色）
   function playKeySound() {
     var ctx = ensureAudio();
     if (!ctx) return;
     if (ctx.state === 'suspended') ctx.resume();
     var t = ctx.currentTime;
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = 1700 + Math.random() * 500;
-    gain.gain.setValueAtTime(0.10, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(t); osc.stop(t + 0.05);
-    var osc2 = ctx.createOscillator();
-    var gain2 = ctx.createGain();
-    osc2.type = 'triangle';
-    osc2.frequency.value = 110 + Math.random() * 70;
-    gain2.gain.setValueAtTime(0.16, t);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
-    osc2.connect(gain2); gain2.connect(ctx.destination);
-    osc2.start(t); osc2.stop(t + 0.08);
+    var v = prefs.volume;
+    if (v <= 0) return;
+    var tb = prefs.timbre;
+    if (tb === 'thock') {
+      tone(ctx, t, 'triangle', 190 + Math.random() * 40, 90, 0.42 * v, 0.09);
+      noiseHit(ctx, t, 900, 0.8, 0.12 * v, 0.03);
+    } else if (tb === 'typewriter') {
+      noiseHit(ctx, t, 3200, 1.6, 0.35 * v, 0.025);
+      tone(ctx, t, 'square', 1400 + Math.random() * 300, 700, 0.09 * v, 0.03);
+      tone(ctx, t + 0.01, 'sine', 2400, 1600, 0.05 * v, 0.09);
+    } else if (tb === 'pop') {
+      tone(ctx, t, 'sine', 760 + Math.random() * 120, 190, 0.34 * v, 0.07);
+    } else { // click 青轴
+      noiseHit(ctx, t, 2600, 1.2, 0.42 * v, 0.028);
+      tone(ctx, t, 'square', 1900 + Math.random() * 400, 900, 0.09 * v, 0.025);
+    }
+  }
+  // 答对：上行两音
+  function playCorrect() {
+    var ctx = ensureAudio(); if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    var t = ctx.currentTime, v = prefs.volume;
+    tone(ctx, t, 'sine', 784, null, 0.16 * v, 0.09);
+    tone(ctx, t + 0.08, 'sine', 1175, null, 0.15 * v, 0.14);
+  }
+  // 答错：低频提示
+  function playWrong() {
+    var ctx = ensureAudio(); if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    var t = ctx.currentTime, v = prefs.volume;
+    tone(ctx, t, 'sawtooth', 220, 150, 0.14 * v, 0.16);
   }
 
   function spawnConfetti() {
@@ -912,7 +999,7 @@
 
   var catpawStyle = null;
   function applyCatpaw() {
-    if (treasure.catpaw) {
+    if (prefs.catpaw) {
       if (!catpawStyle) {
         var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><text y='26' font-size='26'>🐾</text></svg>";
         var uri = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
@@ -930,7 +1017,7 @@
   function openTreasure() { $('treasureOverlay').classList.add('open'); }
   function closeTreasure() { $('treasureOverlay').classList.remove('open'); }
   function refreshTreasureToggles() {
-    var map = { sound: treasure.sound, confetti: treasure.confetti, catpaw: treasure.catpaw };
+    var map = { sound: prefs.sound, confetti: prefs.confetti, catpaw: prefs.catpaw };
     var items = document.querySelectorAll('.treasure-item');
     for (var i = 0; i < items.length; i++) {
       items[i].classList.toggle('active', !!map[items[i].getAttribute('data-t')]);
@@ -966,22 +1053,91 @@
       var f = pickRandom(TREASURE_DATA.fortune);
       showTreasure('<div class="t-card t-fortune"><div class="t-tag">🔮 今日运势</div><div class="f-level">' + f.level + '</div><div class="f-text">' + f.text + '</div></div>');
     } else if (type === 'sound') {
-      treasure.sound = !treasure.sound;
-      refreshTreasureToggles();
-      showTreasure('<div class="t-card">⌨️ 打字音效已' + (treasure.sound ? '开启 🟢' : '关闭 ⚪') + '，现在敲几下键盘试试。</div>');
+      prefs.sound = !prefs.sound;
+      savePrefs(); applySoundBtn(); syncSettingsUI(); refreshTreasureToggles();
+      if (prefs.sound) playKeySound();
+      showTreasure('<div class="t-card">⌨️ 敲击音效已' + (prefs.sound ? '开启 🟢' : '关闭 ⚪') + '，现在敲几下键盘试试。</div>');
     } else if (type === 'confetti') {
-      treasure.confetti = !treasure.confetti;
-      refreshTreasureToggles();
-      if (treasure.confetti) spawnConfetti();
-      showTreasure('<div class="t-card">🎊 答对彩蛋已' + (treasure.confetti ? '开启 🟢' : '关闭 ⚪') + '，答对题目会撒彩带。</div>');
+      prefs.confetti = !prefs.confetti;
+      savePrefs(); syncSettingsUI(); refreshTreasureToggles();
+      if (prefs.confetti) spawnConfetti();
+      showTreasure('<div class="t-card">🎊 答对彩蛋已' + (prefs.confetti ? '开启 🟢' : '关闭 ⚪') + '，答对题目会撒彩带。</div>');
     } else if (type === 'catpaw') {
-      treasure.catpaw = !treasure.catpaw;
-      applyCatpaw();
-      refreshTreasureToggles();
-      showTreasure('<div class="t-card">🐾 猫爪光标已' + (treasure.catpaw ? '开启 🟢' : '关闭 ⚪') + '，移动鼠标看看。</div>');
+      prefs.catpaw = !prefs.catpaw;
+      savePrefs(); applyCatpaw(); syncSettingsUI(); refreshTreasureToggles();
+      showTreasure('<div class="t-card">🐾 猫爪光标已' + (prefs.catpaw ? '开启 🟢' : '关闭 ⚪') + '，移动鼠标看看。</div>');
     } else if (type === 'mars') {
       showMarsTranslator();
     }
+  }
+
+  /* ---------- 设置面板 ---------- */
+  function openSettings() { $('settingsOverlay').classList.add('open'); }
+  function closeSettings() { $('settingsOverlay').classList.remove('open'); }
+
+  function syncSettingsUI() {
+    $('setSound').checked = prefs.sound;
+    $('setCorrect').checked = prefs.soundCorrect;
+    $('setWrong').checked = prefs.soundWrong;
+    $('setConfetti').checked = prefs.confetti;
+    $('setCatpaw').checked = prefs.catpaw;
+    $('setVolume').value = Math.round(prefs.volume * 100);
+    $('setVolumeVal').textContent = Math.round(prefs.volume * 100) + '%';
+    var themeBtns = $('setTheme').querySelectorAll('.seg-btn');
+    for (var i = 0; i < themeBtns.length; i++) themeBtns[i].classList.toggle('active', themeBtns[i].getAttribute('data-theme') === prefs.theme);
+    var tbBtns = $('setTimbre').querySelectorAll('.seg-btn');
+    for (var j = 0; j < tbBtns.length; j++) tbBtns[j].classList.toggle('active', tbBtns[j].getAttribute('data-timbre') === prefs.timbre);
+  }
+
+  function wireSettings() {
+    $('settingsBtn').addEventListener('click', openSettings);
+    $('settingsClose').addEventListener('click', closeSettings);
+    $('settingsOverlay').addEventListener('click', function (e) { if (e.target === this) closeSettings(); });
+
+    var themeBtns = $('setTheme').querySelectorAll('.seg-btn');
+    for (var i = 0; i < themeBtns.length; i++) {
+      themeBtns[i].addEventListener('click', function () {
+        prefs.theme = this.getAttribute('data-theme');
+        savePrefs(); applyTheme(); syncSettingsUI();
+      });
+    }
+    var tbBtns = $('setTimbre').querySelectorAll('.seg-btn');
+    for (var j = 0; j < tbBtns.length; j++) {
+      tbBtns[j].addEventListener('click', function () {
+        prefs.timbre = this.getAttribute('data-timbre');
+        savePrefs(); syncSettingsUI(); playKeySound();
+      });
+    }
+    $('setSound').addEventListener('change', function () {
+      prefs.sound = this.checked; savePrefs(); applySoundBtn(); refreshTreasureToggles();
+      if (prefs.sound) playKeySound();
+    });
+    $('setCorrect').addEventListener('change', function () {
+      prefs.soundCorrect = this.checked; savePrefs(); if (prefs.soundCorrect) playCorrect();
+    });
+    $('setWrong').addEventListener('change', function () {
+      prefs.soundWrong = this.checked; savePrefs(); if (prefs.soundWrong) playWrong();
+    });
+    $('setVolume').addEventListener('input', function () {
+      prefs.volume = Number(this.value) / 100; savePrefs();
+      $('setVolumeVal').textContent = this.value + '%';
+    });
+    $('setVolume').addEventListener('change', function () { playKeySound(); });
+    $('setConfetti').addEventListener('change', function () {
+      prefs.confetti = this.checked; savePrefs(); refreshTreasureToggles(); if (prefs.confetti) spawnConfetti();
+    });
+    $('setCatpaw').addEventListener('change', function () {
+      prefs.catpaw = this.checked; savePrefs(); applyCatpaw(); refreshTreasureToggles();
+    });
+
+    // 顶栏快捷按钮
+    $('soundBtn').addEventListener('click', function () {
+      prefs.sound = !prefs.sound; savePrefs(); applySoundBtn(); syncSettingsUI(); refreshTreasureToggles();
+      if (prefs.sound) playKeySound();
+    });
+    $('themeBtn').addEventListener('click', function () {
+      prefs.theme = prefs.theme === 'dark' ? 'light' : 'dark'; savePrefs(); applyTheme(); syncSettingsUI();
+    });
   }
 
   /* ---------- 初始化 ---------- */
@@ -1059,6 +1215,13 @@
       });
     }
     refreshTreasureToggles();
+
+    // 设置 / 主题 / 音效
+    wireSettings();
+    syncSettingsUI();
+    applyTheme();
+    applySoundBtn();
+    applyCatpaw();
 
     switchIme('shuangpin');
   }

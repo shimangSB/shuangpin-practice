@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>双拼练习 · 多种模式</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
   <header class="topbar">
@@ -23,6 +23,11 @@
       <div class="scheme-box" id="schemeBox">
         <span class="scheme-label">方案</span>
         <div id="schemeSelect" class="scheme-select"></div>
+      </div>
+      <div class="icon-group">
+        <button id="soundBtn" class="icon-btn" title="敲击音效开关">🔊</button>
+        <button id="themeBtn" class="icon-btn" title="深色模式">🌙</button>
+        <button id="settingsBtn" class="icon-btn" title="设置">⚙️</button>
       </div>
       <button id="treasureBtn" class="treasure-btn" title="百宝箱">🧰 百宝箱</button>
     </div>
@@ -250,7 +255,56 @@
     </div>
   </div>
 
-  <script src="data.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <!-- 设置 -->
+  <div class="treasure-overlay" id="settingsOverlay">
+    <div class="treasure-modal" role="dialog" aria-modal="true" aria-label="设置">
+      <div class="treasure-head">
+        <h2>⚙️ 设置</h2>
+        <p>调成你最舒服的样子</p>
+        <button class="treasure-close" id="settingsClose" aria-label="关闭">×</button>
+      </div>
+      <div class="settings-body">
+        <div class="set-row">
+          <span class="set-label">主题</span>
+          <div class="seg" id="setTheme">
+            <button class="seg-btn" data-theme="light">☀️ 浅色</button>
+            <button class="seg-btn" data-theme="dark">🌙 深色</button>
+          </div>
+        </div>
+        <div class="set-row">
+          <span class="set-label">敲击音效</span>
+          <label class="hint-toggle"><input type="checkbox" id="setSound" /> 开启</label>
+        </div>
+        <div class="set-row">
+          <span class="set-label">音色</span>
+          <div class="seg" id="setTimbre">
+            <button class="seg-btn" data-timbre="click">青轴</button>
+            <button class="seg-btn" data-timbre="thock">红轴</button>
+            <button class="seg-btn" data-timbre="typewriter">打字机</button>
+            <button class="seg-btn" data-timbre="pop">气泡</button>
+          </div>
+        </div>
+        <div class="set-row">
+          <span class="set-label">音量</span>
+          <input type="range" id="setVolume" class="set-range" min="0" max="100" step="1" />
+          <span class="set-val" id="setVolumeVal">35%</span>
+        </div>
+        <div class="set-row">
+          <span class="set-label">提示音</span>
+          <label class="hint-toggle"><input type="checkbox" id="setCorrect" /> 答对</label>
+          <label class="hint-toggle"><input type="checkbox" id="setWrong" /> 答错</label>
+        </div>
+        <div class="set-row">
+          <span class="set-label">趣味</span>
+          <label class="hint-toggle"><input type="checkbox" id="setConfetti" /> 答对彩带</label>
+          <label class="hint-toggle"><input type="checkbox" id="setCatpaw" /> 猫爪光标</label>
+        </div>
+        <p class="hint-text">设置会自动保存在本机浏览器；音效首次需要敲一下键才会出声。</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
