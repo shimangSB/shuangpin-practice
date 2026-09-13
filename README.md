@@ -60,10 +60,56 @@
 - 右上角「🧰 百宝箱」藏着一堆彩蛋：双拼冷知识、毒鸡汤、今日运势、火星文翻译。
 - 所有词库（音节、单字、词语、文章、音形例字）均为常用内容，收录于 `data.js`。
 
+## 博客
+
+仓库里的 `/blog/` 是一个静态博客，用最朴素的方式搭的：写 markdown，用一个 Python 脚本转成网页。
+
+### 写一篇新文章
+
+1. 在 `blog_src/` 里新建 `随便什么名字.md`
+2. 开头加 front matter，下面正常写 markdown：
+
+   ```markdown
+   ---
+   title: 文章标题
+   date: 2026-01-15
+   tags: [双拼, 输入法]
+   summary: 一句话摘要，显示在列表页。
+   ---
+   ```
+
+3. 双击 `tools/publish-blog.bat`（生成网页 + 提交 + 推送）
+
+### 三个入口
+
+| 文件 | 用途 |
+| --- | --- |
+| `tools/build-blog.bat` | 只生成网页，不发布 |
+| `tools/preview-blog.bat` | 本地预览，浏览器打开 `http://localhost:8000/blog/` |
+| `tools/publish-blog.bat` | 生成 + 提交 + 推送到 GitHub |
+
+### 约定
+
+- **`blog/` 里的东西全是自动生成的**，不要手动改；改了下次构建会被覆盖。
+- 想改博客样式，改 `tools/build-blog.py` 里的 `CSS_CONTENT`。
+- 文章不写 `title` 时会自动取正文第一个 `#` 标题；不写 `date` 会取文件修改时间。
+- front matter 里写 `draft: true` 的文章只在本地存在，不会生成到 `blog/`。
+- 博客只依赖 Python 标准库（PyYAML 是可选的），不装任何包也能跑。
+
+### 支持的 markdown
+
+标题、粗体、斜体、行内代码、代码块、链接、图片、有序/无序列表、引用、分隔线、表格、`<https://…>` 自动链接。
+
 ## 自测
 
 转换逻辑附带了单元测试，可用 Node 运行：
 
 ```bash
 node test.js
+```
+
+博客的 markdown 渲染自测：
+
+```bash
+python tools/test-md.py
 ```

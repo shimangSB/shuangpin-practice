@@ -1,0 +1,213 @@
+/* 博客样式 —— 独立阅读风格，自动适配深色模式 */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f6f7f9;
+  --text: #1f2328;
+  --text-soft: #6b7280;
+  --line: #e5e7eb;
+  --accent: #e8590c;
+  --accent-soft: #fff4ec;
+  --code-bg: #f6f8fa;
+  --radius: 12px;
+  --measure: 44rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c;
+    --bg-soft: #1b1f27;
+    --text: #e6e8eb;
+    --text-soft: #9aa3af;
+    --line: #2a3039;
+    --accent: #ff9a4d;
+    --accent-soft: #2f2418;
+    --code-bg: #1d2229;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei",
+    "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
+  font-size: 17px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- 页头 ---------- */
+.site-head {
+  border-bottom: 1px solid var(--line);
+  /* 不透明兜底：部分浏览器不支持 color-mix，没有这行页头会变透明，
+     正文滚动时会从页头底下透出来 */
+  background: var(--bg);
+  backdrop-filter: saturate(180%) blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .site-head { background: color-mix(in srgb, var(--bg) 88%, transparent); }
+}
+
+.head-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 62px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.brand:hover { text-decoration: none; }
+.brand-mark { font-size: 22px; line-height: 1; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.35; }
+.brand-text strong { font-size: 16px; }
+.brand-text small { color: var(--text-soft); font-size: 12px; }
+
+.site-nav { display: flex; gap: 18px; font-size: 15px; }
+.site-nav a { color: var(--text-soft); }
+.site-nav a:hover { color: var(--accent); }
+.site-nav a.active { color: var(--accent); font-weight: 600; }
+
+/* ---------- 正文 ---------- */
+main { padding-top: 36px; padding-bottom: 56px; }
+
+h1, h2, h3, h4 { line-height: 1.35; font-weight: 700; }
+h1 { font-size: 30px; margin: 0 0 6px; }
+h2 { font-size: 23px; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 19px; margin: 30px 0 10px; }
+h4 { font-size: 17px; margin: 24px 0 8px; color: var(--text-soft); }
+
+p { margin: 0 0 18px; }
+
+.post-meta {
+  color: var(--text-soft);
+  font-size: 14px;
+  margin: 0 0 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+}
+
+.tag {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 2px 11px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+ul, ol { padding-left: 26px; margin: 0 0 18px; }
+li { margin: 6px 0; }
+
+blockquote {
+  margin: 22px 0;
+  padding: 4px 18px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-soft);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text-soft);
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  overflow-x: auto;
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+pre code { background: none; border: none; padding: 0; font-size: 14px; }
+
+img { max-width: 100%; height: auto; border-radius: var(--radius); display: block; margin: 22px auto; }
+
+hr { border: none; border-top: 1px solid var(--line); margin: 40px 0; }
+
+table { border-collapse: collapse; width: 100%; margin: 0 0 18px; font-size: 15px; }
+th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; }
+th { background: var(--bg-soft); font-weight: 600; }
+
+/* ---------- 文章列表 ---------- */
+.post-list { list-style: none; padding: 0; margin: 10px 0 0; }
+
+.post-list li {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+}
+.post-list li:last-child { border-bottom: none; }
+
+.post-list h2 {
+  font-size: 21px;
+  margin: 0 0 6px;
+  padding: 0;
+  border: none;
+}
+.post-list h2 a { color: var(--text); }
+.post-list h2 a:hover { color: var(--accent); text-decoration: none; }
+
+.post-list .summary { color: var(--text-soft); font-size: 15px; margin: 0 0 10px; }
+.post-list .meta { color: var(--text-soft); font-size: 13px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.page-intro { color: var(--text-soft); font-size: 16px; margin-bottom: 8px; }
+.empty { color: var(--text-soft); padding: 40px 0; }
+
+/* ---------- 页脚 ---------- */
+.site-foot {
+  border-top: 1px solid var(--line);
+  color: var(--text-soft);
+  font-size: 13.5px;
+  padding: 22px 0 34px;
+}
+.site-foot p { margin: 0; }
+
+/* ---------- 移动端 ---------- */
+@media (max-width: 560px) {
+  body { font-size: 16px; line-height: 1.8; }
+  h1 { font-size: 25px; }
+  h2 { font-size: 20px; }
+  .head-inner { min-height: 56px; }
+  .brand-text small { display: none; }
+  .site-nav { gap: 14px; font-size: 14px; }
+  main { padding-top: 24px; padding-bottom: 40px; }
+}

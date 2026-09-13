@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>这个博客是怎么搭起来的 · 双拼练习 · 博客</title>
+<meta name="description" content="双拼练习站加了个博客，没装任何框架，纯静态页面加一个 Python 转换脚本。说说为什么这么做，以及怎么发新文章。" />
+<link rel="stylesheet" href="../style.css" />
+<link rel="alternate" type="application/rss+xml" title="双拼练习 · 博客" href="../feed.xml" />
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap head-inner">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">📝</span>
+      <span class="brand-text">
+        <strong>双拼练习 · 博客</strong>
+        <small>关于双拼、输入法、小鹤音形，以及做这个小站的一些记录。</small>
+      </span>
+    </a>
+    <nav class="site-nav"><a class="" href="../index.html">首页</a><a class="" href="../about.html">关于</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+<article>
+<h1>这个博客是怎么搭起来的</h1>
+<div class="post-meta"><time datetime="2026-01-01">2026 年 01 月 01 日</time><span class="tag">博客</span><span class="tag">建站</span></div>
+<h2>为什么不用现成的博客框架</h2>
+<p>一开始考虑过 Jekyll 和 Hexo，最后都放弃了：</p>
+<ul>
+<li><strong>Jekyll</strong> 是 GitHub Pages 内置的，但它会主动"处理"站点里的文件。双拼站是纯静态的，被 Jekyll 碰一下反而有搞坏的风险。</li>
+<li><strong>Hexo</strong> 要装 Node、拉几百个依赖包。为了写几篇随笔去维护一个 node_modules，不划算。</li>
+</ul>
+<p>所以这里的做法很简单：<strong>一个 Python 脚本，把 markdown 转成 HTML</strong>。零第三方依赖，用的是电脑上本来就有的 Python 标准库。</p>
+<h2>目录结构</h2>
+<table>
+<thead><tr><th>路径</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>blog_src/</code></td><td>我写文章的地方，只放 <code>.md</code> 文件</td></tr>
+<tr><td><code>blog/</code></td><td>脚本自动生成的网页，<strong>不要手动改</strong></td></tr>
+<tr><td><code>tools/build-blog.py</code></td><td>转换脚本</td></tr>
+<tr><td><code>tools/publish-blog.bat</code></td><td>一键：生成 + 提交 + 推送</td></tr>
+</tbody></table>
+<p>关键点是：<strong><code>blog/</code> 里的东西全是生成出来的</strong>。想改样式就改脚本里的 <code>CSS_CONTENT</code>，想改文章就改 <code>blog_src/</code>，改完重新跑一次脚本。</p>
+<h2>怎么发一篇新文章</h2>
+<ol>
+<li>在 <code>blog_src/</code> 里新建一个文件，比如 <code>my-post.md</code></li>
+<li>文件开头加上这几行：</li>
+</ol>
+<pre><code class="language-markdown">   ---
+   title: 文章的标题
+   date: 2026-01-15
+   tags: [标签一, 标签二]
+   summary: 一句话摘要，会显示在文章列表里。
+   ---</code></pre>
+<ol>
+<li>下面正常写 markdown</li>
+<li>双击 <code>tools/publish-blog.bat</code></li>
+</ol>
+<p>过一两分钟，刷新 <code>https://shimangsb.github.io/shuangpin-practice/blog/</code> 就能看到了。</p>
+<h2>支持哪些 markdown 写法</h2>
+<p>够日常写作用了：</p>
+<ul>
+<li>标题 <code>##</code>、<strong>粗体</strong>、<em>斜体</em>、<code>行内代码</code></li>
+<li><a href="https://example.com">链接</a>和图片 <code>![说明](图片地址)</code></li>
+<li>有序列表、无序列表</li>
+<li><code>&gt;</code> 引用</li>
+<li>三个反引号包的代码块</li>
+<li><code>---</code> 分隔线</li>
+<li>表格</li>
+</ul>
+<p>图片建议放在 <code>blog/</code> 目录下，然后在文章里用 <code>../图片名.png</code> 引用。</p>
+<h2>草稿</h2>
+<p>front matter 里写 <code>draft: true</code>，这篇文章就只存在本地，不会被生成到 <code>blog/</code> 里，也就不会上线。想发布时删掉这行，或者改成 <code>false</code>。</p>
+</article>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p>shimangSB · <a href="../">双拼练习</a> · <a href="../feed.xml">RSS</a></p>
+  </div>
+</footer>
+</body>
+</html>

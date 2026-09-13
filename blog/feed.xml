@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>双拼练习 · 博客</title>
+  <link>https://shimangsb.github.io/shuangpin-practice/blog/</link>
+  <description>关于双拼、输入法、小鹤音形，以及做这个小站的一些记录。</description>
+  <language>zh-CN</language>
+  <lastBuildDate>Sun, 13 Sep 2026 13:57:38 +0800</lastBuildDate>
+  <item>
+    <title>双拼入门：先记规则，还是先练手速</title>
+    <link>https://shimangsb.github.io/shuangpin-practice/blog/posts/shuangpin-ru-men.html</link>
+    <guid isPermaLink="true">https://shimangsb.github.io/shuangpin-practice/blog/posts/shuangpin-ru-men.html</guid>
+    <pubDate>Mon, 05 Jan 2026 00:00:00 +0800</pubDate>
+    <description>很多人学双拼卡在背键位表上。其实键位表不用背，敲够次数自然就记住了，顺序搞反会很痛苦。</description>
+  </item>
+  <item>
+    <title>这个博客是怎么搭起来的</title>
+    <link>https://shimangsb.github.io/shuangpin-practice/blog/posts/hello-blog.html</link>
+    <guid isPermaLink="true">https://shimangsb.github.io/shuangpin-practice/blog/posts/hello-blog.html</guid>
+    <pubDate>Thu, 01 Jan 2026 00:00:00 +0800</pubDate>
+    <description>双拼练习站加了个博客，没装任何框架，纯静态页面加一个 Python 转换脚本。说说为什么这么做，以及怎么发新文章。</description>
+  </item>
+</channel>
+</rss>
