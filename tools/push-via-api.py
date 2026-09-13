@@ -78,6 +78,7 @@ OVERWRITE = "--overwrite" in sys.argv
 
 status, ref = api("GET", "/repos/%s/git/ref/heads/%s" % (REPO, BRANCH))
 force = False
+base_parent = parent
 if status == 200:
     remote_sha = ref["object"]["sha"]
     print("远程 %s: %s" % (BRANCH, remote_sha[:10]))
@@ -86,8 +87,10 @@ if status == 200:
         sys.exit(0)
     if remote_sha != parent:
         if OVERWRITE:
-            print("远程位置和本地父提交不同，但指定了 --overwrite，将强制指向本地提交。")
-            force = True
+            # 用远程当前位置当父提交：这样是一个正常的快进提交，
+            # 而不是真的强推（API 也会校验父提交是否存在）
+            print("远程位置和本地父提交不同，按 --overwrite 以远程位置为父提交。")
+            base_parent = remote_sha
         else:
             print("远程位置和本地父提交不一致，为避免覆盖别人的改动，已中止。")
             print("如果确认是要修正上一次推错的内容，加 --overwrite 再跑一次。")
@@ -142,11 +145,22 @@ for path, action in entries:
     print("  上传  %s" % path)
 
 # ---------- 6. 建 tree ----------
-# 用 base_tree 让 GitHub 在父提交的 tree 基础上合并这些改动，
-# 只列变动的文件即可（"path": "." 那种子树写法 API 不接受）。
-parent_tree = git("rev-parse", "%s^{tree}" % parent).decode().strip()
+# 用 base_tree 让 GitHub 在远程当前位置的 tree 基础上合并这些改动。
+# 注意 base 必须是「远程的 tree」，和下面 commit 的父提交保持一致，
+# 否则建出来的 tree 会丢掉对方那边已有的文件。
+# 远程提交对象本地可能没有（推完没 fetch 过），所以通过 API 查它的 tree sha。
+if base_parent == parent:
+    remote_tree = git("rev-parse", "%s^{tree}" % base_parent).decode().strip()
+else:
+    status, rc = api("GET", "/repos/%s/git/commits/%s" % (REPO, base_parent))
+    if status != 200:
+        print("读取远程提交失败：HTTP %d %s" % (status, rc.get("message")))
+        sys.exit(1)
+    remote_tree = rc["tree"]["sha"]
+    print("远程 tree: %s" % remote_tree[:10])
+
 status, tree = api("POST", "/repos/%s/git/trees" % REPO,
-                   {"base_tree": parent_tree, "tree": tree_items})
+                   {"base_tree": remote_tree, "tree": tree_items})
 if status not in (200, 201):
     print("建 tree 失败：HTTP %d %s" % (status, tree.get("message")))
     sys.exit(1)
@@ -155,7 +169,7 @@ if status not in (200, 201):
 status, commit = api("POST", "/repos/%s/git/commits" % REPO, {
     "message": message,
     "tree": tree["sha"],
-    "parents": [parent],
+    "parents": [base_parent],
 })
 if status not in (200, 201):
     print("建 commit 失败：HTTP %d %s" % (status, commit.get("message")))
