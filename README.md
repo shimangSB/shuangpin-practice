@@ -88,6 +88,23 @@
 | `tools/preview-blog.bat` | 本地预览，浏览器打开 `http://localhost:8000/blog/` |
 | `tools/publish-blog.bat` | 生成 + 提交 + 推送到 GitHub |
 
+### 推送机制（重要）
+
+`publish-blog.bat` 会先试标准的 `git push`。但**这台机器上的 Git 凭据管理器会卡住**
+（沙箱环境下 GCM 依赖命名管道通信，取不到凭据），所以失败或超时会自动改用
+`tools/push-via-api.py` 走 GitHub REST API 推送，效果等价。
+
+API 推送需要 token，放在环境变量 `GH_TOKEN` 里。第一次运行会提示你粘贴，
+之后会存进当前用户的用户环境变量，后续双击就不用再输了。
+
+> 注意：token 等同于账号密码。**不要**把它粘进聊天、issue 或提交到仓库里。
+> 如果怀疑泄露，立刻去 https://github.com/settings/tokens 删掉重建。
+
+### 如果 git 和 API 都推不上去
+
+先确认网络能通 `api.github.com`。这台机器上实测 `github.com:443` 时不时连不上，
+但 `api.github.com` 一直正常，所以 API 通道更可靠。
+
 ### 约定
 
 - **`blog/` 里的东西全是自动生成的**，不要手动改；改了下次构建会被覆盖。
